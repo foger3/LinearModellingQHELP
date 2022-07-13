@@ -3,6 +3,8 @@ setwd('/Users/lucat/OneDrive/Documents/Uni Amsterdam/QHELP_Padova/Data/')
 df <- mtcars
 df$vs <- factor(df$vs, levels = c(0, 1), labels = c("a", "b"))
 write.csv(df, "Cars.csv", row.names = FALSE)
+
+
 library(shiny)
 shinyApp(
   
@@ -26,20 +28,16 @@ shinyApp(
         #                "Multiple Linear Regression" = 2, 
         #                "Hierarchical Multiple Linear Regression" = 3), 
         # ),
-        
-        conditionalPanel(
-          condition = "input.model >= 2",
-          numericInput("num", label = h3("Numeric input"), value = 3)
-        ),
+    
         
         conditionalPanel(
           condition = "input.load >= 1",
-          uiOutput("var1"),
-          uiOutput("var2"),
-          # lapply(3:("input.num"), function(i) {
-          #   strong(paste0("var", i),br())
-          # }),
-          uiOutput("var3"),
+          uiOutput("dependent"),
+          # conditionalPanel(
+          #   condition = "input.model >= 2",
+          #   uiOutput("num")
+          # ),
+          uiOutput("independent"),
           actionButton("select", "Select & Display")
         ),
         
@@ -49,8 +47,7 @@ shinyApp(
           splitLayout(plotOutput("graph1"), 
                       plotOutput("graph2"),
                       plotOutput("graph3"))
-        ),
-        fluidRow(column(4, verbatimTextOutput("txt")))
+        )
   ),
   
   server = function(input, output){
@@ -58,56 +55,65 @@ shinyApp(
     dataInput <- reactive({
         data <- read.csv(input$example$datapath)
     })
+    
     observeEvent(input$load, {
       values$data <- data.frame(dataInput())
       if (any(sapply(values$data, is.character)) == TRUE) {
-        values$data = values$data[, !sapply(values$data, is.character) == T]
+        values$data <- values$data[, !sapply(values$data, is.character) == T]
       } else {
-        values$data = values$data
+        values$data <- values$data
       }
+      values$choice <- colnames(values$data)
     })
     
-    
     observeEvent(input$model, {
-      output$var1 <- renderUI({
-        nam <- colnames(values$data) 
-        selectInput("var1", label = "Select x:", 
-                    choices = c(nam), multiple = FALSE,
-                    selected = nam[1])
+      
+      output$dependent <- renderUI({
+        selectInput("dependent", label = "Select Outcome", 
+                    choices = c(values$choice), multiple = FALSE,
+                    selected = values$choice[1], width = 170)
+        #if (input$model == 1) {
+        #   checkboxGroupInput("dependent", "Select Outcome", choices = values$choice, 
+        #                      selected = tail(input$dependent, 1), inline = TRUE)
+        # } else {
+        #   checkboxGroupInput("dependent", "Select Outcome", choices = values$choice, 
+        #                      selected = tail(input$dependent, 1), inline = TRUE)
+        # }
       })
       
-      output$var2 <- renderUI({
-        nam2 <- colnames(values$data) 
-        selectInput("var2", label = "Select y:",
-                    choices = c(nam2), multiple = FALSE,
-                    selected = nam2[1])
+      output$independent <- renderUI({
+        if (input$model == 1) {
+          selectInput("independent", label = "Select Predictor", 
+                      choices = values$choice, multiple = FALSE,
+                      selected = values$choice[1], width = 170)
+          # checkboxGroupInput("independent", "Select Predictors", choices = values$choice, 
+          #                    selected = tail(input$independent, 1), inline = TRUE)
+        } else {
+          selected <- input$independent
+          if (is.null(selected)) selected <- values$choices[1]
+          selectInput("independent", label = "Select Predictors", 
+                      choices = values$choice, multiple = TRUE,
+                      selected = selected, width = 170)
+          # checkboxGroupInput("independent", "Select Predictors", choices = values$choice, 
+          #                    selected = values$choice, inline = TRUE)
+        }
       })
       
-      if (input$model != 1) {
-        output$varX <- renderUI({
-          # lapply(3:(input$num + 2), function(i) {
-          #   strong(paste0("var", i),br())
-          # })
-          
-          nam3 <- colnames(values$data)
-          selectInput("varX", label = "Select y:",
-                      choices = c(nam3), multiple = FALSE,
-                      selected = nam3[1])
-        })
-      } else {
-        output$varX <- NULL
-      }
+      # output$num <- renderUI({
+      #   numericInput("num", label = "Select No. of Predictors", value = 1, width = 170, min = 1, max = length(values$choice))
+      # })
+      
     })
     
     observeEvent(input$select, {
-      values$df <- values$data[c(input$var1, input$var2)]
-      values$fit <- lm(eval(parse(text = input$var1)) ~ eval(parse(text = input$var2)), data = values$data)
+      values$df <- values$data[c(input$dependent, input$independent)]
+      values$fit <- lm(eval(parse(text = input$dependent)) ~ eval(parse(text = input$independent)), data = values$data)
       values$sum <- as.data.frame(summary(values$fit)$adj.r.squared)
-      values$p1 <- ggplot2::ggplot(values$df, ggplot2::aes_string(input$var1, input$var2)) +
+      values$p1 <- ggplot2::ggplot(values$df, ggplot2::aes_string(input$dependent, input$independent)) +
         ggplot2::geom_point() +
         ggplot2::geom_smooth(method = "lm", formula = y ~ x, se = FALSE, color = 'turquoise4') +
         ggplot2::theme_minimal() +
-        ggplot2::labs(x = input$var1, y = input$var2, title = "Simple Linear Regression Plot") +
+        ggplot2::labs(x = input$dependent, y = input$independent, title = "Simple Linear Regression Plot") +
         ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, size = 20, face = "bold"))
       
       values$p2 <- ggplot2::ggplot(values$sum, ggplot2::aes(y = 1)) +
@@ -116,8 +122,6 @@ shinyApp(
       values$p3 <- ggplot2::ggplot(values$sum, ggplot2::aes(y = summary(values$fit)$adj.r.squared)) +
         ggplot2::geom_bar()
       })
-    
-    output$txt <- renderText({ paste(class(input$model)) })
     
     output$graph1 <- renderPlot({
       validate(
@@ -148,29 +152,25 @@ shinyApp(
 
 
 
-ui <- fluidPage(
-  title = 'Creating a UI from a dynamic loop length',
-  sidebarLayout(
-    sidebarPanel(
-      # Determine Length of Loop
-      numericInput(inputId = "NumLoop", "Number of Loops", value = 5, min = 1, max = 10, step = 1)
-    ),
-    mainPanel(
-      # UI output
-      uiOutput('moreControls')
-    )
-  )
-)
-
-server <- function(input, output, session) {
-  
-  output$moreControls <- renderUI({
-    lapply(1:input$NumLoop, function(i) {
-      strong(paste0('Hi, this is output B#', i),br())
+choices <- LETTERS[1:4]  
+shinyApp(
+  ui = fluidPage(
+    uiOutput("select")
+  ),
+  server = function(input, output) {
+    
+    output$select <- renderUI({
+      selected <- input$testSelect
+      if(is.null(selected)) selected <- choices[1]
+      selectizeInput(
+        inputId = "testSelect",
+        label = "Test",
+        choices = choices,
+        selected = selected,
+        multiple = TRUE,
+        options = list(maxItems = 2)
+      )
     })
-  })
-  
-}
-
-shinyApp(ui = ui, server = server)
+  }
+)
  
