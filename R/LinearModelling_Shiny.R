@@ -1,10 +1,3 @@
-
-setwd('/Users/lucat/OneDrive/Documents/Uni Amsterdam/QHELP_Padova/Data/')
-df <- mtcars
-df$vs <- factor(df$vs, levels = c(0, 1), labels = c("a", "b"))
-write.csv(df, "Cars.csv", row.names = FALSE)
-
-
 library(shiny)
 shinyApp(
   
@@ -97,8 +90,13 @@ shinyApp(
     observeEvent(input$select, {
 
       if (input$model != 3) {
+        values$ind <- values$data[, input$independent]
+        values$dep <- values$data[, input$dependent]
         values$model <- lm(paste(input$dependent, "~", paste(input$independent, collapse = "+")), data = values$data)
         values$sum <- summary(values$model)
+        values$df <- data.frame(coef = c(values$sum$coefficients[-1, 1]),
+                                coef_name = rownames(values$sum$coefficients)[-1])
+
       }
       
       output$graph1 <- renderPlot({
@@ -106,10 +104,14 @@ shinyApp(
           need(input$select > 0, "Waiting for data")
         )
         if (input$model == 1) {
-          plot(values$data[, input$independent], values$data[, input$dependent])
-          car::regLine(values$model)
+          plot(values$ind, values$dep,
+               pch = 21, cex = 2, col ="grey25", bg ="grey80", bty = "l",
+               main = "Simple Linear Regression", xlab = input$independent, ylab = input$dependent)
+          car::regLine(values$model, col = "black")
         } else if (input$model == 2) {
-          car::avPlot(values$model, input$auswahl, id = FALSE, grid = FALSE)
+          car::avPlot(values$model, input$auswahl, id = FALSE, grid = FALSE, 
+                      pch = 21, cex = 2, col ="grey25", bg ="grey80", col.lines = "black", bty = "l",
+                      main = "Simple Linear Regression", xlab = input$auswahl, ylab = input$dependent)
         }
       })
       
@@ -118,17 +120,17 @@ shinyApp(
           need(input$select > 0, "Waiting for data")
         )
         if (input$model != 3) {
-          data <- data.frame(RS = values$sum$adj.r.squared, MO = "")
-          ggplot2::ggplot(data, ggplot2::aes(x = MO, y = RS)) +
+          ggplot2::ggplot(values$df, aes(x = coef_name, y = coef)) +
+            ggplot2::theme_minimal() +
             ggplot2::geom_hline(yintercept = 0, color = "black", size = 0.5) +
-            ggplot2::geom_bar(stat = "identity", fill = "grey", col = "black", width = .3) +
-            ggplot2::xlab(label = "") +
-            ggplot2::ylab(label = "Adjusted R Squared") +
-            ggplot2::scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) +
+            ggplot2::geom_bar(stat = "identity", fill = "grey", col = "black",
+                              width = .5, position = position_dodge(.1)) +
+            ggplot2::coord_flip() +
+            ggplot2::labs(y = "Estimated Coefficients", x = "") +
             ggplot2::theme(panel.grid.major = ggplot2::element_blank(), panel.grid.minor = ggplot2::element_blank(),
                            panel.background = ggplot2::element_blank(), axis.ticks = ggplot2::element_blank(),
-                           axis.line.y = ggplot2::element_line(colour = "black")) +
-            ggplot2::coord_cartesian(ylim = c(0.046, 1))
+                           axis.line.x = ggplot2::element_line(colour = "black"), text = element_text(size = 12),
+                           axis.text = element_text(size = 12)) 
         }
       })
 
@@ -137,66 +139,25 @@ shinyApp(
           need(input$select > 0, "Waiting for data")
         )
         if (input$model != 3) {
-          data <- data.frame(RS = values$sum$adj.r.squared, MO = "")
-          ggplot2::ggplot(data, ggplot2::aes(x = MO, y = RS)) +
+          data <- data.frame(rs = values$sum$adj.r.squared, model = "")
+          ggplot2::ggplot(data, ggplot2::aes(x = model, y = rs)) +
             ggplot2::geom_hline(yintercept = 0, color = "black", size = 0.5) +
-            ggplot2::geom_bar(stat = "identity", fill = "grey", col = "black", width = .3) +
-            ggplot2::xlab(label = "") +
+            ggplot2::geom_bar(stat = "identity", fill = "grey", col = "black", 
+                              width = .3, position = position_dodge(.1)) +
+            ggplot2::xlab(label = "Model") +
             ggplot2::ylab(label = "Adjusted R Squared") +
             ggplot2::scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) +
             ggplot2::theme(panel.grid.major = ggplot2::element_blank(), panel.grid.minor = ggplot2::element_blank(),
                            panel.background = ggplot2::element_blank(), axis.ticks = ggplot2::element_blank(),
-                           axis.line.y = ggplot2::element_line(colour = "black")) +
+                           axis.line.y = ggplot2::element_line(colour = "black"), text = element_text(size = 12),
+                           axis.text = element_text(size = 12))+
             ggplot2::coord_cartesian(ylim = c(0.046, 1))
         }
       })
-      
-      # values$df <- values$data[c(input$dependent, input$independent)]
-      # values$fit <- lm(eval(parse(text = input$dependent)) ~ eval(parse(text = input$independent)), data = values$data)
-      # values$sum <- as.data.frame(summary(values$fit)$adj.r.squared)
-      # values$p1 <- ggplot2::ggplot(values$df, ggplot2::aes_string(input$dependent, input$independent)) +
-      #   ggplot2::geom_point() +
-      #   ggplot2::geom_smooth(method = "lm", formula = y ~ x, se = FALSE, color = 'turquoise4') +
-      #   ggplot2::theme_minimal() +
-      #   ggplot2::labs(x = input$dependent, y = input$independent, title = "Simple Linear Regression Plot") +
-      #   ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, size = 20, face = "bold"))
-      # 
-      # values$p2 <- ggplot2::ggplot(values$sum, ggplot2::aes(y = 1)) +
-      #   ggplot2::geom_bar()
-      # 
-      # values$p3 <- ggplot2::ggplot(values$sum, ggplot2::aes(y = summary(values$fit)$adj.r.squared)) +
-      #   ggplot2::geom_bar()
-      })
-    
-
+   })
     
   },
   
-  
   options = list(height = 800)
-)
-
-
-
-choices <- LETTERS[1:4]  
-shinyApp(
-  ui = fluidPage(
-    uiOutput("select")
-  ),
-  server = function(input, output) {
-    
-    output$select <- renderUI({
-      selected <- input$testSelect
-      if(is.null(selected)) selected <- choices[1]
-      selectizeInput(
-        inputId = "testSelect",
-        label = "Test",
-        choices = choices,
-        selected = selected,
-        multiple = TRUE,
-        options = list(maxItems = 2)
-      )
-    })
-  }
 )
  
