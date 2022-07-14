@@ -33,21 +33,23 @@ shinyApp(
         conditionalPanel(
           condition = "input.load >= 1",
           uiOutput("dependent"),
-          # conditionalPanel(
-          #   condition = "input.model >= 2",
-          #   uiOutput("num")
-          # ),
           uiOutput("independent"),
+          conditionalPanel(
+            condition = "input.model >= 2",
+            uiOutput("auswahl"),
+            conditionalPanel(
+              condition = "input.model == 3",
+              uiOutput("auswahl2")
+            )
+          ),
           actionButton("select", "Select & Display")
         ),
         
         hr(),
         
-        fluidRow(
-          splitLayout(plotOutput("graph1"), 
-                      plotOutput("graph2"),
-                      plotOutput("graph3"))
-        )
+        splitLayout(plotOutput("graph1"), 
+                    plotOutput("graph2"),
+                    plotOutput("graph3"))
   ),
   
   server = function(input, output){
@@ -89,14 +91,27 @@ shinyApp(
           # checkboxGroupInput("independent", "Select Predictors", choices = values$choice, 
           #                    selected = tail(input$independent, 1), inline = TRUE)
         } else {
-          selected <- input$independent
-          if (is.null(selected)) selected <- values$choices[1]
+          # selected <- input$independent
+          # if (is.null(selected)) selected <- values$choices[1]
+          # req(!all(values$choices %in% input$independent) | is.null(input$independent), cancelOutput = TRUE)
           selectInput("independent", label = "Select Predictors", 
                       choices = values$choice, multiple = TRUE,
-                      selected = selected, width = 170)
+                      selected = values$choice[1], width = 170)
           # checkboxGroupInput("independent", "Select Predictors", choices = values$choice, 
           #                    selected = values$choice, inline = TRUE)
         }
+      })
+      
+      output$auswahl <- renderUI({
+        selectInput("auswahl", label = "Select desired predictors",
+                    choices = input$independent, multiple = FALSE,
+                    selected = input$independent[1], width = 170)
+      })
+      
+      output$auswahl2 <- renderUI({
+        selectInput("auswahl2", label = "Select desired model",
+                    choices = input$independent, multiple = FALSE,
+                    selected = input$independent[1], width = 170)
       })
       
       # output$num <- renderUI({
