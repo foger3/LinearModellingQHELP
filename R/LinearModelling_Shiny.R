@@ -89,7 +89,6 @@ shinyApp(
         ls <- c()
         txtx <- NULL
         for (i in 1:length(input$independent)) {
-          #ls[i] <- paste("Model", i, sep = "")
           txtx <- c(txtx, input$independent[i])
           ls[i] <- paste(input$dependent, "~", paste(txtx, collapse = "+"))
         }
@@ -102,20 +101,20 @@ shinyApp(
     
     observeEvent(input$select, {
       
+      values$mod <- input$model
+      values$aus <- input$auswahl
+      values$ind <- values$data[, input$independent]
+      values$dep <- values$data[, input$dependent]
+      
       if (input$model != 3) {
-        values$mod <- input$model
+        
         values$name <- c(input$independent, input$dependent)
-        values$ind <- values$data[, input$independent]
-        values$dep <- values$data[, input$dependent]
         values$model <- lm(paste(input$dependent, "~", paste(input$independent, collapse = "+")), data = values$data)
         values$sum <- summary(values$model)
         values$df <- data.frame(coef = c(values$sum$coefficients[-1, 1]),
                                 coef_name = rownames(values$sum$coefficients)[-1])
       } else {
-        values$mod <- input$model
         values$col <- c(input$dependent, input$independent)
-        values$ind <- values$data[, input$independent]
-        values$dep <- values$data[, input$dependent]
         values$rs <- c()
         values$modnom <- c()
         for (i in 1:length(input$independent)) {
@@ -159,11 +158,12 @@ shinyApp(
         
         values$coeff_df2 <- data.frame(modelnr, coeff, mod2, valu = as.vector(na.omit(unlist(out_df))))
         
-        for (i in 1:(length(values$col)-1)) {
-          if (eval(outx[[i]]$call[[2]]) == input$auswahl2) {
-            values$modaus <- outx[[i]]
-          }
-        }
+        values$modaus <- outx[[length(outx)]]
+        # for (i in 1:(length(values$col)-1)) {
+        #   if (eval(outx[[i]]$call[[2]]) == input$auswahl2) {
+        #     values$modaus <- outx[[i]]
+        #   }
+        # }
         
       }
       
@@ -174,14 +174,14 @@ shinyApp(
                main = "Simple Linear Regression", xlab = values$name[1], ylab = values$name[2])
           car::regLine(values$model, col = "black")
         } else if (values$mod == 2) {
-          car::avPlot(values$model, input$auswahl, id = FALSE, grid = FALSE, 
+          car::avPlot(values$model, values$aus, id = FALSE, grid = FALSE, 
                       pch = 21, cex = 2, col ="grey25", bg ="grey80", col.lines = "black", bty = "l",
-                      main = "Multiple Linear Regression", xlab = input$auswahl, ylab = values$name[length(values$name)])
+                      main = "Multiple Linear Regression", xlab = values$aus, ylab = values$name[length(values$name)])
         } 
         else {
-          car::avPlot(values$modaus, input$auswahl, id = FALSE, grid = FALSE,
+          car::avPlot(values$modaus, values$aus, id = FALSE, grid = FALSE,
                       pch = 21, cex = 2, col ="grey25", bg ="grey80", col.lines = "black", bty = "l",
-                      main = "Hierarchical Multiple Linear Regression", xlab = input$auswahl, ylab = values$col[1])
+                      main = "Hierarchical Multiple Linear Regression", xlab = values$aus, ylab = values$col[1])
         }
       })
       
@@ -201,7 +201,7 @@ shinyApp(
         } else {
           ggplot2::ggplot(values$coeff_df2, ggplot2::aes(x = reorder(mod2, coeff), y = valu, fill = as.factor(modelnr))) +
             ggplot2::theme_minimal() + 
-            ggplot2::geom_hline(yintercept = 0, color = "black", size = 0.5) +
+            ggplot2::geom_hline(yintercept = 0, color = "black", size = 0.3) +
             ggplot2::geom_bar(stat = "identity", width = .5, position = "dodge") +
             ggplot2::coord_flip() +
             ggplot2::labs(y = "Estimated Coefficients", x = "") +
