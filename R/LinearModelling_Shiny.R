@@ -187,17 +187,17 @@ shinyApp(
       
       output$graph2 <- shiny::renderPlot({
         if (values$mod != 3) {
-          ggplot2::ggplot(values$df, aes(x = coef_name, y = coef)) +
+          ggplot2::ggplot(values$df, ggplot2::aes(x = coef_name, y = coef)) +
             ggplot2::theme_minimal() +
             ggplot2::geom_hline(yintercept = 0, color = "black", size = 0.5) +
             ggplot2::geom_bar(stat = "identity", fill = "grey", col = "black",
-                              width = .5, position = position_dodge(.1)) +
+                              width = .5, position = ggplot2::position_dodge(.1)) +
             ggplot2::coord_flip() +
             ggplot2::labs(y = "Estimated Coefficients", x = "") +
             ggplot2::theme(panel.grid.major = ggplot2::element_blank(), panel.grid.minor = ggplot2::element_blank(),
                            panel.background = ggplot2::element_blank(), axis.ticks = ggplot2::element_blank(),
-                           axis.line.x = ggplot2::element_line(colour = "black"), text = element_text(size = 12),
-                           axis.text = element_text(size = 12)) 
+                           axis.line.x = ggplot2::element_line(colour = "black"), text = ggplot2::element_text(size = 12),
+                           axis.text = ggplot2::element_text(size = 12)) 
         } else {
           ggplot2::ggplot(values$coeff_df2, ggplot2::aes(x = reorder(mod2, coeff), y = valu, fill = as.factor(modelnr))) +
             ggplot2::theme_minimal() + 
@@ -208,8 +208,8 @@ shinyApp(
             ggplot2::guides(fill = ggplot2::guide_legend(title = "Model Nr.")) +
             ggplot2::theme(panel.grid.major = ggplot2::element_blank(), panel.grid.minor = ggplot2::element_blank(),
                            panel.background = ggplot2::element_blank(), axis.ticks = ggplot2::element_blank(),
-                           axis.line.x = ggplot2::element_line(colour = "black"), text = element_text(size = 12),
-                           axis.text = element_text(size = 12))
+                           axis.line.x = ggplot2::element_line(colour = "black"), text = ggplot2::element_text(size = 12),
+                           axis.text = ggplot2::element_text(size = 12))
         }
       })
 
@@ -222,14 +222,14 @@ shinyApp(
         ggplot2::ggplot(data, ggplot2::aes(x = model, y = rs)) +
           ggplot2::geom_hline(yintercept = 0, color = "black", size = 0.5) +
           ggplot2::geom_bar(stat = "identity", fill = "grey", col = "black", 
-                            width = .3, position = position_dodge(.1)) +
+                            width = .3, position = ggplot2::position_dodge(.1)) +
           ggplot2::xlab(label = "") +
           ggplot2::ylab(label = "Adjusted R Squared") +
           ggplot2::scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1)) +
           ggplot2::theme(panel.grid.major = ggplot2::element_blank(), panel.grid.minor = ggplot2::element_blank(),
                          panel.background = ggplot2::element_blank(), axis.ticks = ggplot2::element_blank(),
-                         axis.line.y = ggplot2::element_line(colour = "black"), text = element_text(size = 12),
-                         axis.text = element_text(size = 12))+
+                         axis.line.y = ggplot2::element_line(colour = "black"), text = ggplot2::element_text(size = 12),
+                         axis.text = ggplot2::element_text(size = 12))+
           ggplot2::coord_cartesian(ylim = c(0.046, 1))
       })
       
