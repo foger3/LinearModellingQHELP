@@ -61,13 +61,13 @@ shinyApp(
     
     observeEvent(input$model, {
       
-      output$dependent <- shiny::renderUI({
+      output$dependent <- renderUI({
         selectInput("dependent", label = "Select one Outcome", 
                     choices = c(values$choice), multiple = FALSE,
                     selected = values$choice[1], width = 300)
       })
       
-      output$independent <- shiny::renderUI({
+      output$independent <- renderUI({
         if (input$model == 1) {
           selectInput("independent", label = "Select one Predictor", 
                       choices = values$choice[values$choice != input$dependent], 
@@ -79,13 +79,13 @@ shinyApp(
         }
       })
       
-      output$auswahl <- shiny::renderUI({
+      output$auswahl <- renderUI({
         selectInput("auswahl", label = "Investigate one Predictor (others kept constant)",
                     choices = input$independent, multiple = FALSE,
                     selected = input$independent[1], width = 300)
       })
       
-      output$auswahl2 <- shiny::renderUI({
+      output$auswahl2 <- renderUI({
         ls <- c()
         txtx <- NULL
         for (i in 1:length(input$independent)) {
@@ -112,7 +112,8 @@ shinyApp(
         values$model <- lm(paste(input$dependent, "~", paste(input$independent, collapse = "+")), data = values$data)
         values$sum <- summary(values$model)
         values$df <- data.frame(coef = c(values$sum$coefficients[-1, 1]),
-                                coef_name = rownames(values$sum$coefficients)[-1])
+                                coef_name = rownames(values$sum$coefficients)[-1],
+                                num = seq(1:length(values$ind)))
       } else {
         values$col <- c(input$dependent, input$independent)
         values$rs <- c()
@@ -167,7 +168,7 @@ shinyApp(
         
       }
       
-      output$graph1 <- shiny::renderPlot({
+      output$graph1 <- renderPlot({
         if (values$mod == 1) {
           plot(values$ind, values$dep,
                pch = 21, cex = 2, col ="grey25", bg ="grey80", bty = "l",
@@ -177,17 +178,16 @@ shinyApp(
           car::avPlot(values$model, values$aus, id = FALSE, grid = FALSE, 
                       pch = 21, cex = 2, col ="grey25", bg ="grey80", col.lines = "black", bty = "l",
                       main = "Multiple Linear Regression", xlab = values$aus, ylab = values$name[length(values$name)])
-        } 
-        else {
+        } else {
           car::avPlot(values$modaus, values$aus, id = FALSE, grid = FALSE,
-                      pch = 21, cex = 2, col ="grey25", bg ="grey80", col.lines = "black", bty = "l",
+                      pch = 21, cex = 2, col ="grey25", bg = "grey80", col.lines = "black", bty = "l",
                       main = "Hierarchical Multiple Linear Regression", xlab = values$aus, ylab = values$col[1])
         }
       })
       
-      output$graph2 <- shiny::renderPlot({
+      output$graph2 <- renderPlot({
         if (values$mod != 3) {
-          ggplot2::ggplot(values$df, ggplot2::aes(x = coef_name, y = coef)) +
+          ggplot2::ggplot(values$df, ggplot2::aes(x = reorder(coef_name, num), y = coef)) +
             ggplot2::theme_minimal() +
             ggplot2::geom_hline(yintercept = 0, color = "black", size = 0.5) +
             ggplot2::geom_bar(stat = "identity", fill = "grey", col = "black",
@@ -213,7 +213,7 @@ shinyApp(
         }
       })
 
-      output$graph3 <- shiny::renderPlot({
+      output$graph3 <- renderPlot({
         if (values$mod != 3) {
           data <- data.frame(rs = values$sum$adj.r.squared, model = "Model")
         } else {
@@ -235,7 +235,7 @@ shinyApp(
       
       
       if (values$mod == 1) {
-        output$text1 <- shiny::renderText({
+        output$text1 <- renderText({
           paste("This model studies the ability of prediction of one predictor (independent variable) in one",
                 "outcome (dependent variable).",
                 "",
@@ -253,7 +253,7 @@ shinyApp(
                 "*the notation of this function: Yi=b0+b1Xi", sep ="\n")
         })
         
-        output$text2 <- shiny::renderText({
+        output$text2 <- renderText({
           paste("b0: corresponds to the best estimate for our data when the independent variable (x axis) is 0. *",
                 "",
                 "b1: is the parameter estimating the effect of the independent variable for every subject i. *",
@@ -261,7 +261,7 @@ shinyApp(
                 "*remind the notation of this function: Yi = b0+b1Xi", sep = "\n")
         })
         
-        output$text3 <- shiny::renderText({
+        output$text3 <- renderText({
           paste("Is a corrected goodness-of-fit measure for linear models. Identifies the percentage of variance in",
                 "the dependent variable that is explained by the independent variable, through that specific model,",
                 "taking into consideration the number of parameters and the sample size. R-squared measures the goodness",
@@ -281,7 +281,7 @@ shinyApp(
                 sep = "\n")
         })
       } else if (values$mod == 2) {
-        output$text1 <- shiny::renderText({
+        output$text1 <- renderText({
           paste("This model makes specific predictions for every observation based on one or more independent", 
                 "variables (predictors) of interest.",
                 "",
@@ -301,7 +301,7 @@ shinyApp(
                 "when the other variables selected are held constant.", sep ="\n")
         })
         
-        output$text2 <- shiny::renderText({
+        output$text2 <- renderText({
           paste("b0: corresponds to the best estimate for our data when the independent variables are 0. *",
                 "",
                 "bjbj - is the jj parameter estimating the effect of the independent variable jj for every subject ii. *",
@@ -309,7 +309,7 @@ shinyApp(
                 "*remind the notation of this function: Yi = b0+b1×Xi1...bj×Xi", sep = "\n")
         })
         
-        output$text3 <- shiny::renderText({
+        output$text3 <- renderText({
           paste("Is a corrected goodness-of-fit measure for linear models. Identifies the percentage of variance in",
                 "the dependent variable that is explained by the independent variable, through that specific model,",
                 "taking into consideration the number of parameters and the sample size. R-squared measures the goodness",
